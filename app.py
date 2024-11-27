@@ -1,9 +1,7 @@
-import os
-from flask import Flask, jsonify, request
+import streamlit as st
+import pandas as pd
 import random
 from datetime import datetime, timedelta
-
-app = Flask(__name__)
 
 # Funzione per generare dati
 def generate_data(num_records):
@@ -31,17 +29,19 @@ def generate_data(num_records):
         data.append(record)
     return data
 
-@app.route('/medical-data', methods=['GET'])
-def medical_data():
-    try:
-        num_records = int(request.args.get('num_records', 3000))
-        if num_records > 100000:
-            return jsonify({"error": "Request limit exceeded. Max 100,000 records allowed."}), 400
-        data = generate_data(num_records)
-        return jsonify(data)
-    except ValueError:
-        return jsonify({"error": "Invalid number of records specified."}), 400
+# Streamlit app
+st.title("Medical Data API")
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+# Input per il numero di record
+num_records = st.number_input("Number of records to generate", min_value=1, max_value=100000, value=100)
+
+# Generazione dei dati
+if st.button("Generate Data"):
+    data = generate_data(num_records)
+    df = pd.DataFrame(data)
+    st.write("Generated Data:")
+    st.dataframe(df)
+
+    # Download CSV
+    csv = df.to_csv(index=False).encode('utf-8')
+    st.download_button("Download CSV", data=csv, file_name="medical_data.csv", mime="text/csv")
